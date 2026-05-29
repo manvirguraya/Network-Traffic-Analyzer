@@ -1,0 +1,4 @@
+scapy==2.5.0
+flask==3.0.3
+prometheus-client==0.20.0
+python-dotenv==1.0.1
