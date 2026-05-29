@@ -1,70 +1,80 @@
 # Network Traffic Analyzer & Monitoring Dashboard
 
-A Linux-based network monitoring platform that captures, analyzes, and visualizes local network activity using Python, Scapy, Prometheus, Grafana, and Docker.
+A Linux-based network traffic monitoring platform that captures, analyzes, and visualizes real-time network activity using Python, Docker, Prometheus, and Grafana. This project can run on a Raspberry Pi, old laptop, desktop, mini PC, or Linux virtual machine.
 
-## Project Description
+The stack includes Python packet analysis tools for monitoring traffic, Prometheus for metrics collection, Grafana for visualization dashboards, Node Exporter and cAdvisor for host/container monitoring, and Docker Compose for deployment and orchestration.
 
-This project monitors network traffic on a Linux machine and exposes traffic metrics for visualization in Grafana. The analyzer captures packets, identifies protocols, tracks bandwidth usage, records source/destination activity, and exports metrics through a Prometheus-compatible endpoint.
+---
 
-## Features
+# Project Description
 
-- Real-time packet capture using Python and Scapy
-- Protocol analysis for TCP, UDP, ICMP, DNS, HTTP, HTTPS, and other traffic
-- Bandwidth monitoring for incoming and outgoing traffic
-- Top source and destination IP tracking
-- Prometheus metrics endpoint for monitoring
-- Grafana dashboard for traffic visualization
-- Dockerized deployment with Docker Compose
-- Bash scripts for setup, startup, shutdown, health checks, and cleanup
-- Optional host-network mode for Linux packet capture
+This project demonstrates how network traffic and bandwidth usage can be monitored and analyzed using Linux networking tools, Python packet inspection, and containerized monitoring infrastructure. Docker Compose is used to deploy monitoring services while Python scripts capture and process network activity for visualization and diagnostics.
 
-## Technologies Used
+---
 
+# Features
+
+- Real-time network traffic monitoring and packet analysis
+- Bandwidth usage visualization and analytics
+- Protocol inspection using Python and Scapy
+- Docker container monitoring with cAdvisor
+- Host system monitoring with Node Exporter
+- Metrics collection using Prometheus
+- Interactive monitoring dashboards with Grafana
+- Automated setup, updates, backups, and health checks using Bash scripts
+- Environment variable template using `.env.example`
+- Persistent monitoring data stored under `data/`
+
+---
+
+# Technologies Used
+
+- Linux / Ubuntu Server / Raspberry Pi OS
 - Python
 - Scapy
-- Flask
-- Prometheus Client
 - Docker
 - Docker Compose
-- Linux
 - Bash
+- YAML
 - Grafana
 - Prometheus
+- Node Exporter
+- cAdvisor
 
-## Architecture
+---
+
+# Architecture
 
 ```txt
-Local Network Traffic
-        |
-        v
-Python Packet Analyzer
-        |
-        v
-Prometheus Metrics Endpoint (:8000/metrics)
-        |
-        v
-Prometheus
-        |
-        v
-Grafana Dashboard
+Internet
+   |
+Router
+   |
+Linux Monitoring Server
+   |-- Python Packet Analyzer
+   |-- Network Traffic Monitoring
+   |-- Prometheus Metrics Collection
+   |-- Grafana Monitoring Dashboard
+   |-- Node Exporter Host Metrics
+   |-- cAdvisor Container Metrics
 ```
 
-## Repository Structure
+---
+
+# Repository Structure
 
 ```txt
 network-traffic-analyzer/
 |
 |-- README.md
 |-- docker-compose.yml
-|-- Dockerfile
-|-- requirements.txt
+|-- .env
 |-- .env.example
 |-- .gitignore
 |
 |-- src/
 |   |-- analyzer.py
-|   |-- metrics.py
-|   |-- config.py
+|   |-- exporter.py
 |
 |-- configs/
 |   |-- prometheus/
@@ -75,138 +85,290 @@ network-traffic-analyzer/
 |       |   |-- datasources/
 |       |   |   |-- prometheus.yml
 |       |   |-- dashboards/
-|       |       |-- dashboard.yml
+|       |       |-- dashboards.yml
+|       |
 |       |-- dashboards/
-|           |-- network-dashboard.json
-|
-|-- scripts/
-|   |-- setup.sh
-|   |-- start.sh
-|   |-- stop.sh
-|   |-- healthcheck.sh
-|   |-- clean.sh
+|           |-- network-overview.json
 |
 |-- docs/
-|   |-- setup-guide.md
+|   |-- setup.md
 |   |-- troubleshooting.md
-|   |-- resume-bullets.md
+|
+|-- scripts/
+|   |-- install-docker.sh
+|   |-- setup.sh
+|   |-- start-services.sh
+|   |-- stop-services.sh
+|   |-- update-containers.sh
+|   |-- backup.sh
+|   |-- healthcheck.sh
 |
 |-- data/
 |   |-- .gitkeep
-|-- logs/
+|
+|-- backups/
 |   |-- .gitkeep
+|
 |-- screenshots/
 |   |-- .gitkeep
 ```
 
-## Setup Instructions
+---
 
-### 1. Clone the Repository
+# Setup Instructions
+
+## 1. Prepare the Server
+
+Install a Linux-based OS on your Raspberry Pi, old laptop, desktop, mini PC, or virtual machine.
+
+Recommended options:
+
+- Ubuntu Server
+- Debian
+- Raspberry Pi OS 64-bit
+- Ubuntu Desktop if you want a GUI
+
+Make sure the system has internet access.
+
+---
+
+## 2. Install Git
+
+```bash
+sudo apt update
+sudo apt install git -y
+```
+
+---
+
+## 3. Clone the Repository
 
 ```bash
 git clone https://github.com/YOUR-USERNAME/network-traffic-analyzer.git
 cd network-traffic-analyzer
 ```
 
-### 2. Create the Environment File
+---
+
+## 4. Install Docker
 
 ```bash
-cp .env.example .env
+chmod +x scripts/*.sh
+./scripts/install-docker.sh
 ```
 
-Edit `.env` if needed:
+After Docker installs, reboot or log out and back in:
+
+```bash
+sudo reboot
+```
+
+Then return to the project folder.
+
+---
+
+## 5. Run Project Setup
+
+```bash
+./scripts/setup.sh
+```
+
+This script:
+
+- creates required folders
+- copies `.env.example` to `.env`
+- validates the Docker Compose file
+- prepares the monitoring environment
+
+---
+
+## 6. Edit Environment Variables
 
 ```bash
 nano .env
 ```
 
-### 3. Make Scripts Executable
+Change the default values before starting services.
+
+Example:
+
+```env
+TZ=America/Chicago
+GRAFANA_ADMIN_USER=admin
+GRAFANA_ADMIN_PASSWORD=change_this_password
+NETWORK_INTERFACE=eth0
+```
+
+---
+
+## 7. Start the Monitoring Services
 
 ```bash
-chmod +x scripts/*.sh
+./scripts/start-services.sh
 ```
 
-### 4. Start the Project
+This runs:
 
 ```bash
-./scripts/start.sh
+docker compose up -d
 ```
 
-Or manually:
+Docker will download and start:
+
+- Grafana
+- Prometheus
+- Node Exporter
+- cAdvisor
+
+---
+
+## 8. Start the Python Network Analyzer
+
+The analyzer may require elevated permissions to inspect network packets:
 
 ```bash
-docker compose up -d --build
+sudo python3 src/analyzer.py
 ```
 
-### 5. View Services
-
-| Service | URL |
-|---|---|
-| Packet Analyzer Metrics | `http://localhost:8000/metrics` |
-| Prometheus | `http://localhost:9090` |
-| Grafana | `http://localhost:3000` |
-
-Default Grafana login:
-
-```txt
-Username: admin
-Password: admin
-```
-
-Change the password after logging in.
-
-## How It Works
-
-The Python analyzer uses Scapy to sniff packets from a selected network interface. It updates Prometheus metrics for packet counts, protocol usage, bandwidth, source IPs, and destination IPs. Prometheus scrapes those metrics from the analyzer, and Grafana visualizes them using a preloaded dashboard.
-
-## Important Linux Permission Note
-
-Packet capture requires elevated network permissions. This project runs the analyzer container with capabilities needed for packet sniffing:
-
-```yaml
-cap_add:
-  - NET_ADMIN
-  - NET_RAW
-network_mode: host
-```
-
-This setup is intended for Linux machines such as Raspberry Pi OS, Ubuntu Server, Debian, or an old laptop running Linux.
-
-## Useful Commands
-
-Start services:
+If the project uses a Prometheus exporter, run:
 
 ```bash
-./scripts/start.sh
+sudo python3 src/exporter.py
 ```
 
-Stop services:
+---
+
+## 9. Check Running Containers
 
 ```bash
-./scripts/stop.sh
+docker compose ps
 ```
 
-Run health check:
+Or run:
 
 ```bash
 ./scripts/healthcheck.sh
 ```
 
-View logs:
+---
 
-```bash
-docker compose logs -f analyzer
+# Service URLs
+
+Replace `SERVER-IP` with your device's local IP address.
+
+| Service | URL |
+|---|---|
+| Grafana | `http://SERVER-IP:3000` |
+| Prometheus | `http://SERVER-IP:9090` |
+| cAdvisor | `http://SERVER-IP:8081` |
+
+---
+
+# Default Logins
+
+## Grafana
+
+Username and password come from your `.env` file:
+
+```env
+GRAFANA_ADMIN_USER=admin
+GRAFANA_ADMIN_PASSWORD=change_this_password
 ```
 
-Clean stopped containers and unused Docker resources:
+---
+
+# Useful Commands
+
+## Start services
 
 ```bash
-./scripts/clean.sh
+./scripts/start-services.sh
 ```
 
-## Resume Summary
+## Stop services
 
-Built a Linux-based network traffic monitoring platform using Python, Scapy, Docker, Prometheus, and Grafana to capture, analyze, and visualize real-time network activity and bandwidth usage.
+```bash
+./scripts/stop-services.sh
+```
+
+## View logs
+
+```bash
+docker compose logs -f
+```
+
+## Update containers
+
+```bash
+./scripts/update-containers.sh
+```
+
+## Run health check
+
+```bash
+./scripts/healthcheck.sh
+```
+
+## Run backup
+
+```bash
+./scripts/backup.sh
+```
+
+## Run packet analyzer
+
+```bash
+sudo python3 src/analyzer.py
+```
+
+## Run Prometheus exporter
+
+```bash
+sudo python3 src/exporter.py
+```
+
+---
+
+# Grafana Monitoring Setup
+
+Grafana is automatically provisioned with Prometheus as a data source and includes starter dashboards for:
+
+- network traffic metrics
+- bandwidth monitoring
+- Docker container statistics
+- Linux host monitoring
+
+Prometheus collects metrics from:
+
+- Prometheus itself
+- Node Exporter for host system metrics
+- cAdvisor for Docker container metrics
+- Python monitoring exporter for network traffic metrics
+
+---
+
+# Packet Analysis
+
+The Python analyzer uses Scapy to inspect network packets and collect traffic statistics.
+
+Example traffic types:
+
+- TCP
+- UDP
+- DNS
+- HTTP
+- ICMP
+
+The analyzer can be extended to track:
+
+- packet counts
+- bandwidth usage
+- source and destination IPs
+- protocol distribution
+- traffic spikes
+- suspicious network activity
+
+---
 
 ## Disclaimer
 
